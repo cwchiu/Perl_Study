@@ -1,5 +1,6 @@
 use Test::More tests => 100;
 use Scalar::Util qw(looks_like_number);
+use experimental 'smartmatch';
 
 my $s1 = "arick";
 my $i1 = 100;
@@ -79,6 +80,10 @@ subtest 'Array', sub {
     ok( $#arr7+1 == 11, '直接索引不存在位置賦值');
     ok( !defined($arr7[0]), '未賦值位置為 undef' );
     
+    ok(grep( /^99$/, @arr7 ), 'check element in array'); 
+    
+    # 5.10+
+    ok( '99' ~~ @arr7, 'use ~~ check exists' );
     
     subtest 'push/pop', sub {
         push @arr7, 100;
@@ -154,3 +159,49 @@ subtest 'Array', sub {
     ok( @arr14[0] == 2 && @arr14[1] == 4, 'grep');
 };
 
+subtest 'Hash', sub {
+    my %h1;
+    $h1{name} = 'arick';
+    $h1{hp} = 100;
+    ok( %h1{name} == 'arick' );
+    ok( %h1{hp} == 100 );
+    ok( exists($h1{name}), 'check exists' );
+    
+    my %h2 = qw|name arick hp 100|;
+    ok( %h2{name} == 'arick' );
+    ok( %h2{hp} == 100 );    
+    
+    my %h3 = (
+      'name' => 'arick',
+      'hp' => 100
+    );
+    ok( %h3{name} eq 'arick' );
+    ok( %h3{hp} == 100 );    
+
+    my @check_keys;
+    while ( my ($key, $value) = each(%h3)) {
+        push @check_keys, $key;
+        if( $key eq 'name'){
+            ok($value eq 'arick');
+        }elsif ($key eq 'hp'){
+            ok($value == 100);
+        }else {
+            ok( 0 );
+        }
+    }
+    ok( $#check_keys+1 == 2 );
+    ok( 'name' ~~ @check_keys);
+    ok( 'hp' ~~ @check_keys);
+
+    my @values1 = values(%h3);
+    ok( 'arick' ~~ @values1);
+    ok( 100 ~~ @values1);
+
+    my @keys1 = keys(%h3);
+    ok( 'name' ~~ @keys1);
+    ok( 'hp' ~~ @keys1);
+    
+    delete $h3{name};
+    
+    ok( !exists($h3{name}) );
+};
