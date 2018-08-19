@@ -1,3 +1,6 @@
+use strict;
+use warnings;
+
 use Test::More tests => 100;
 use Scalar::Util qw(looks_like_number);
 use experimental 'smartmatch';
@@ -5,28 +8,33 @@ use experimental 'smartmatch';
 my $s1 = "arick";
 my $i1 = 100;
 subtest 'defined', sub {
-    ok( !defined( $not_defined ), "defined");
+    # ok( !defined( $not_defined ), "defined");
     ok( defined( $s1 ), "defined");
     ok( !defined( $a ) , "defined");
 };
 
-subtest '字串合併', sub {
-    ok( "hello" . " world" == "hello world", 'string concat' );
-    ok( "hello" . 3 == "hello3", 'string concat' );
-};
+subtest 'number', sub {
+    subtest 'looks_like_number', sub {
+        ok( looks_like_number("100") , "looks_like_number" );
+        ok( looks_like_number("-3.14") , "looks_like_number" );
+        ok( !looks_like_number("0x64") , "looks_like_number" );
+        ok( looks_like_number("0123") , "looks_like_number" );
+    };      
 
-subtest 'looks_like_number', sub {
-    ok( looks_like_number("100") , "looks_like_number" );
-    ok( looks_like_number("-3.14") , "looks_like_number" );
-    ok( looks_like_number("0x64") == false , "looks_like_number" );
-    ok( looks_like_number("0123") , "looks_like_number" );
-};      
-
-subtest '數值運算', sub {
-    ok( 3+4 == 7, "number add" );
-    ok( "0123" + 1 == 124, "string add number");
-    ok( '3' * 3 == 9);
-    ok( 'a' * 3 == 'aaa');
+    subtest '數值運算', sub {
+        ok( 3+4 == 7, "number add" );
+        ok( "0123" + 1 == 124, "string add number");
+        ok( '3' * 3 == 9);
+        ok( 'a' * 3 == 'aaa');
+    };
+    
+    my @a1 = (4,6,9,1,2);
+    my @a2 = sort {$a <=> $b} @a1;
+    ok( @a2[0] == 1);
+    ok( @a2[1] == 2);
+    ok( @a2[2] == 4);
+    ok( @a2[3] == 6);
+    ok( @a2[4] == 9);
 };
 
 subtest '比較運算', sub {
@@ -42,9 +50,65 @@ subtest 'String', sub {
     my $s2 = "hello $s0"; 
     my $s3 = qq|hello $s0|;
     
-    ok( $s1 == 'hello $s0', '單引號不解析變數');
-    ok( $s2 == 'hello xxx', '雙引號解析變數');
-    ok( $s3 == 'hello xxx', 'qq自訂字串符號');
+    ok( $s1 eq 'hello $s0', '單引號不解析變數');
+    ok( $s2 eq 'hello xxx', '雙引號解析變數');
+    ok( $s3 eq 'hello xxx', 'qq自訂字串符號');
+    
+    subtest '字串合併', sub {
+        ok( "hello" . " world" == "hello world", 'string concat' );
+        ok( "hello" . 3 == "hello3", 'string concat' );
+    };
+
+    ok( length('arick') == 5 );
+    
+    subtest 'index', sub {
+        ok( index('hello world', 'world') == 6, 'index');
+        my $s = '12395123';
+        my $p1 = index($s, '123');
+        ok( $p1 == 0);
+        my $p2 = index($s, '123', $p1+1);
+        ok($p2 == 5);
+        
+        my $p3 = rindex($s, '123');
+        ok($p3 == 5);
+        my $p4 = rindex($s, '123', $p3-1);
+        ok($p4 == 0);
+    };
+    
+    subtest 'substr', sub {
+       ok( substr('hello world', 6) eq 'world' );
+       ok( substr('hello world', 6, 3) eq 'wor' );
+       ok( substr('hello world', -1) eq 'd' );
+       ok( substr('hello world', -5, 2) eq 'wo' );
+       
+       my $s = 'hello world';
+       substr($s, 6) = 'arick';
+       ok($s eq 'hello arick');
+       
+    };
+    
+    ok( uc('hello') eq 'HELLO');
+    ok( lc('Hello') eq 'hello');
+    ok( ucfirst('hello') eq 'Hello');
+    ok( lcfirst('HELLO') eq 'hELLO');
+    
+    subtest 'sprintf', sub {
+        ok( sprintf('100%%') eq '100%');
+        ok( sprintf('>%s<', 'arick') eq '>arick<');
+        ok( sprintf('>%d<', 10) eq '>10<');
+        ok( sprintf('>%x<', 10) eq '>a<', '16進位');
+        ok( sprintf('>%X<', 254) eq '>FE<', '16進位');
+        ok( sprintf('>%o<', 10) eq '>12<', '八進位');
+    };
+    
+    subtest 'sort', sub {
+        my @a1 = ('arick', 'john', 'triton', 'edi');
+        my @a2 = sort {$a cmp $b} @a1;
+        ok( @a2[0] eq 'arick');
+        ok( @a2[1] eq 'edi');
+        ok( @a2[2] eq 'john');
+        ok( @a2[3] eq 'triton');
+    };
 };
 
 subtest 'Array', sub {
@@ -75,7 +139,7 @@ subtest 'Array', sub {
     my @arr6 = qw|1 2 3|;
     ok( $#arr6+1 == 3, 'qw 初始化陣列');
     
-    my $arr7;
+    my @arr7;
     $arr7[10] = 99;
     ok( $#arr7+1 == 11, '直接索引不存在位置賦值');
     ok( !defined($arr7[0]), '未賦值位置為 undef' );
@@ -147,14 +211,14 @@ subtest 'Array', sub {
     ok( $#arr12 == 4, 'split');
     ok( @arr12 + 0 == 5, 'split');
     
-    @arr13 = map {$_ * 10} (1..3);
+    my @arr13 = map {$_ * 10} (1..3);
     ok( 
       @arr13[0] == 10 &&
       @arr13[1] == 20 &&
       @arr13[2] == 30, 'map test' 
     );
     
-    @arr14 = grep {$_ % 2 == 0} (1...4);
+    my @arr14 = grep {$_ % 2 == 0} (1...4);
     ok( @arr14 +0 == 2, 'grep');
     ok( @arr14[0] == 2 && @arr14[1] == 4, 'grep');
 };
@@ -204,4 +268,22 @@ subtest 'Hash', sub {
     delete $h3{name};
     
     ok( !exists($h3{name}) );
+    
 };
+
+sub ipsort {
+  my ($a1, $a2, $a3, $a4) = $a =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
+  my ($b1, $b2, $b3, $b4) = $b =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
+  
+  ($a1 <=> $b1) or ($a2 <=> $b2) or ($a3 <=> $b3) or ($a4 <=> $b4);
+}
+
+my @ips = (
+  '140.21.135.218',
+  '140.112.22.49',
+  '140.213.21.4',
+  '140.211.42.8',
+);
+my @ip_result = sort ipsort @ips;
+print "$_\n" for @ip_result;
+print (0 or -1 or 1 or 1);
