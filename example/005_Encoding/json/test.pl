@@ -4,7 +4,9 @@ use JSON;
 use Data::Dumper;
 
 my %h1 = (
-  'name' => 'arick'
+  'name' => 'arick',
+  'is_hero' => \1,
+  'magic' => \0
 );
 my $d = encode_json(\%h1);
 print($d);
