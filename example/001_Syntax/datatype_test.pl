@@ -131,6 +131,22 @@ subtest 'String', sub {
         ok( $a2[2] eq 'john');
         ok( $a2[3] eq 'triton');
     };
+    
+    subtest 'chomp', sub {
+      my $s1 = "Gideon\n";
+      ok( chomp($s1) == 1);  
+      ok( $s1 eq 'Gideon');
+      
+      my $s2 = "Gideon\n\n";
+      ok( chomp($s2) == 1);  
+      ok( $s2 eq "Gideon\n");
+      
+      my $s3 = "Gideon";
+      ok( chomp($s3) == 0);  
+      ok( $s3 eq "Gideon");
+      
+      
+    };
 };
 
 subtest 'Array', sub {
