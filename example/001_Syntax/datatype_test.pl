@@ -21,9 +21,20 @@ subtest 'number', sub {
         ok( looks_like_number("0123") , "looks_like_number" );
     };      
 
+    subtest 'compare', sub {
+        ok( 100 == 100, '==');
+        ok( 100 != 1, '!=');
+        ok( 100 > 1, '>');
+        ok( 100 >= 1, '>=');
+        ok( 1 < 100, '<');
+        ok( 1 <= 100, '<=');
+    };
+    
     subtest '數值運算', sub {
         ok( 3+4 == 7, "number add" );
         ok( "0123" + 1 == 124, "string add number");
+        ok( '12' * '3' == 36);
+        # ok( '12good34' * '3' == 36, '非數值之後自動忽略'); # warning
         # ok( '3' * 3 == 9); # warngin
         # ok( 'a' * 3 == 'aaa'); # warning
     };
@@ -37,22 +48,14 @@ subtest 'number', sub {
     ok( $a2[4] == 9);
 };
 
-subtest '比較運算', sub {
-    ok( $s1 eq "arick", "比較字串");
-    ok( "100" eq 100, "數值字串自動傳型成數值");
-    # ok( $a eq '', 'undef 字串預設為空字串');
-    # ok( $a == 0, 'undef 數值預設為0');
-};
-
 subtest 'String', sub {
     my $s0 = 'xxx';
     my $s1 = 'hello $s0';
-    my $s2 = "hello $s0"; 
-    my $s3 = qq|hello $s0|;
     
     ok( $s1 eq 'hello $s0', '單引號不解析變數');
-    ok( $s2 eq 'hello xxx', '雙引號解析變數');
-    ok( $s3 eq 'hello xxx', 'qq自訂字串符號');
+    ok( "hello $s0" eq 'hello xxx', '雙引號解析變數');
+    ok( "hello ${s0}1" eq 'hello xxx1', '雙引號解析變數,使用{}');
+    ok( qq|hello $s0| eq 'hello xxx', 'qq自訂字串符號');
     
     subtest '字串合併', sub {
         ok( "hello" . " world" eq "hello world", 'string concat' );
@@ -91,7 +94,20 @@ subtest 'String', sub {
     ok( lc('Hello') eq 'hello');
     ok( ucfirst('hello') eq 'Hello');
     ok( lcfirst('HELLO') eq 'hELLO');
-    
+
+
+    subtest '比較運算', sub {
+        ok( 'arick' eq "arick", "eq");
+        ok( "100" eq 100, "數值字串自動傳型成數值");
+        ok( 'a' ne 'b', 'ne');
+        ok( 'a' lt 'b', 'lt');
+        ok( 'a' le 'b', 'le');
+        ok( 'b' gt 'a', 'gt');
+        ok( 'b' ge 'a', 'ge');
+        # ok( $a eq '', 'undef 字串預設為空字串');
+        # ok( $a == 0, 'undef 數值預設為0');
+    };
+
     subtest 'sprintf', sub {
         ok( sprintf('100%%') eq '100%');
         ok( sprintf('>%s<', 'arick') eq '>arick<');
