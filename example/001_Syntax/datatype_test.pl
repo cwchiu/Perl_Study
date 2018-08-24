@@ -1,3 +1,5 @@
+use 5.024; # 標記使用 perl 5.24
+
 use strict;
 use warnings;
 
@@ -34,6 +36,11 @@ subtest 'number', sub {
         ok( 3+4 == 7, "number add" );
         ok( "0123" + 1 == 124, "string add number");
         ok( '12' * '3' == 36);
+        
+        my $a = 10;
+        my @b = qw|a b cc|;
+        ok( $a + @b, 'scalar + 陣列長度');
+        ok( $a + scalar @b, '使用 scalar 明確標示純量');
         # ok( '12good34' * '3' == 36, '非數值之後自動忽略'); # warning
         # ok( '3' * 3 == 9); # warngin
         # ok( 'a' * 3 == 'aaa'); # warning
@@ -90,11 +97,21 @@ subtest 'String', sub {
        
     };
     
-    ok( uc('hello') eq 'HELLO');
-    ok( lc('Hello') eq 'hello');
-    ok( ucfirst('hello') eq 'Hello');
-    ok( lcfirst('HELLO') eq 'hELLO');
-
+    subtest 'case change', sub {
+        ok( uc('hello') eq 'HELLO');
+        ok( lc('Hello') eq 'hello');
+        ok( ucfirst('hello') eq 'Hello');
+        ok( lcfirst('HELLO') eq 'hELLO');
+        
+        ok( "\LHello World" eq 'hello world', '\L 之後全部轉小寫');
+        ok( "\lHELLO WORLD" eq 'hELLO WORLD', '\l 首字小寫');
+        
+        ok( "\UHello World" eq 'HELLO WORLD', '\U 之後全部轉大寫');
+        ok( "\uhello world" eq 'Hello world', '\u 首字大寫');
+        
+        ok( "\u\LHELLO WORLD" eq 'Hello world', '\u\L 首字大寫其餘小寫');
+        ok( "\l\UHELLO WORLD" eq 'hELLO WORLD', '\l\U 首字小寫其餘大寫');
+    };
 
     subtest '比較運算', sub {
         ok( 'arick' eq "arick", "eq");
@@ -111,7 +128,13 @@ subtest 'String', sub {
     subtest 'sprintf', sub {
         ok( sprintf('100%%') eq '100%');
         ok( sprintf('>%s<', 'arick') eq '>arick<');
+        ok( sprintf('>%10s<', 'arick') eq '>     arick<');
+        ok( sprintf('>%-10s<', 'arick') eq '>arick     <');
         ok( sprintf('>%d<', 10) eq '>10<');
+        ok( sprintf('>%6d<', 10) eq '>    10<');
+        ok( sprintf('>%-6d<', 10) eq '>10    <');
+        ok( sprintf('>%5.3f<', 3.1415926) eq '>3.142<');
+        ok( sprintf('>%10.3f<', 3.1415926) eq '>     3.142<');
         ok( sprintf('>%x<', 10) eq '>a<', '16進位');
         ok( sprintf('>%X<', 254) eq '>FE<', '16進位');
         ok( sprintf('>%o<', 10) eq '>12<', '八進位');
@@ -145,7 +168,9 @@ subtest 'String', sub {
       ok( chomp($s3) == 0);  
       ok( $s3 eq "Gideon");
       
-      
+      my @a1 = ("xyz\n", "abc\n");
+      chomp(@a1);
+      ok( ($a1[0] eq 'xyz') && ($a1[1] eq 'abc'), 'chomp 用於陣列, 會在每個元素套用一次');
     };
 };
 
@@ -153,7 +178,10 @@ subtest 'Array', sub {
     my @arr1;
     $arr1[0] = 'a';
     $arr1[1] = 'b';
-    ok( $#arr1+1 == 2, '陣列長度');
+    subtest '陣列長度', sub {
+        ok( $#arr1+1 == 2);
+        ok( @arr1 + 0);
+    };
     
     @arr1[ $#arr1 +1 ] = 'c';
     ok( $#arr1+1 == 3, '自動擴展後長度');
@@ -164,11 +192,23 @@ subtest 'Array', sub {
     my @arr2 = (1,2,3);
     ok( $#arr2+1 == 3, '直接初始化');
     
-    my @arr3 = (1...10);
-    ok( $#arr3+1 == 10, 'begin...end');
-    
-    my @arr4 = (1,2,3...10);
-    ok( $#arr4+1 == 10);
+    subtest '.. 運算子', sub { 
+        my @arr3 = (1..10);
+        ok( $#arr3+1 == 10, 'begin..end');
+        
+        my @arr4 = (1,2,3..10);
+        ok( $#arr4+1 == 10);
+        
+        my @arr10 = (5..1);
+        ok( @arr10 == 0, '大..小 不會產生');
+        
+        my @arr11 = (1.7..5.9);
+        ok( @arr11 == 5, '小數點會無條件捨去');
+        
+        my @arr12_1 = (1,2,3);
+        my @arr12_2 = (1..@arr12_1);
+        ok(@arr12_2 == 3, '@arr_12_1 會先以純量得到陣列長度3,效果等同 (1..3)');
+    };
     
     my @arr5_1 = (3...10);
     my @arr5 = (1,2, @arr5_1);
@@ -197,6 +237,13 @@ subtest 'Array', sub {
         my $last = pop @arr7;
         ok( $#arr7+1 == 11, 'pop 後陣列長度');
         ok( $last == 100, '檢查 pop 的元素');
+        
+        my @new_arr = (1,2);
+        push @arr7, @new_arr;
+        ok( @arr7 == 13, 'push 一個陣列變數, 會將全部元素加入');
+        ok( pop @arr7 == 2);
+        ok( pop @arr7 == 1);
+        
     };
     
     subtest 'shift/unshift', sub {
@@ -209,6 +256,11 @@ subtest 'Array', sub {
         unshift @arr8, 100;
         ok( $#arr8+1 == 2, 'unshift : 插入一個元素到開頭後資料長度' );
         ok( $arr8[0] == 100, '第一個元素內容檢查' );
+        
+        unshift @arr8, (1,2);
+        ok( @arr8 == 4, 'unshift 一個陣列變數, 會將全部元素加入');
+        ok( shift @arr8 == 1);
+        ok( shift @arr8 == 2);
     };
     
     subtest '切片', sub {
@@ -233,32 +285,71 @@ subtest 'Array', sub {
        ok( @arr10_1 + 0 == 4, '利用數值運算,得到陣列長度');
     };
     
-    my @arr11 = (3, 1, 99, 2, 7);
-    my @arr11_1 = sort {$a <=> $b} @arr11;
-    ok(
-      $arr11_1[0] == 1 &&
-      $arr11_1[1] == 2 &&
-      $arr11_1[2] == 3 &&
-      $arr11_1[3] == 7 &&
-      $arr11_1[4] == 99, '數值比較排序'
-    );
+    subtest 'sort', sub {
+        my @arr11 = (3, 1, 99, 2, 7);
+        my @arr11_1 = sort {$a <=> $b} @arr11;
+        ok(
+          $arr11_1[0] == 1 &&
+          $arr11_1[1] == 2 &&
+          $arr11_1[2] == 3 &&
+          $arr11_1[3] == 7 &&
+          $arr11_1[4] == 99, '數值比較排序'
+        );
+        ok(join( '|', @arr11_1) eq '1|2|3|7|99', 'join'); 
+    };
+
+    subtest 'reverse', sub {
+        my @a1 = (1..3);
+        my @a2 = reverse @a1;
+        ok( join(',', @a2) eq '3,2,1');
+    };
     
-    ok(join( '|', @arr11_1) eq '1|2|3|7|99', 'join'); 
     
-    my @arr12 = split(/\|/, '1|2|3|7|99');
-    ok( $#arr12 == 4, 'split');
-    ok( @arr12 + 0 == 5, 'split');
+    subtest 'split', sub {
+        my @arr12 = split(/\|/, '1|2|3|7|99');
+        ok( $#arr12 == 4, 'split');
+        ok( @arr12 + 0 == 5, 'split');
+        
+        my @arr2 = split /\s+/, 'thie is a book';
+        ok( @arr2 == 4);
+        
+        $_ = 'this is a book';
+        my @arr2_1 = split;
+        ok( @arr2_1 == 4, '效果等同 /\s+/');
+        
+        my @arr3 = split( m!,!, '1,,2');
+        ok( @arr3 == 3);
+        
+        my @arr4 = split( m!,!, ',,1');
+        ok( @arr4 == 3);
+        
+        my @arr5 = split( m!,!, '1,,');
+        ok( @arr5 == 1, '後面空白元素忽略');
+        
+        my @arr6 = split( m!,!, '1,,', -1);
+        ok( @arr6 == 3, '使用 -1 保留空白元素');
+    };
     
-    my @arr13 = map {$_ * 10} (1..3);
-    ok( 
-      $arr13[0] == 10 &&
-      $arr13[1] == 20 &&
-      $arr13[2] == 30, 'map test' 
-    );
+    subtest 'join', sub {
+        ok( join(',', qw|this is a book|) eq 'this,is,a,book');
+        ok( join(',', 'this', 'is', 'a', 'book') eq 'this,is,a,book');
+        ok( join(',', qw||) eq '');
+    };
     
-    my @arr14 = grep {$_ % 2 == 0} (1...4);
-    ok( @arr14 +0 == 2, 'grep');
-    ok( $arr14[0] == 2 && $arr14[1] == 4, 'grep');
+    subtest 'map', sub {
+        my @arr13 = map {$_ * 10} (1..3);
+        ok( 
+          $arr13[0] == 10 &&
+          $arr13[1] == 20 &&
+          $arr13[2] == 30, 'map test' 
+        );
+    };
+    
+    subtest 'grep', sub {
+        my @arr14 = grep {$_ % 2 == 0} (1...4);
+        ok( @arr14 +0 == 2);
+        ok( $arr14[0] == 2 && $arr14[1] == 4);
+    };
 };
 
 subtest 'Hash', sub {
@@ -272,6 +363,7 @@ subtest 'Hash', sub {
     my %h2 = qw|name arick hp 100|;
     ok( $h2{name} eq 'arick' );
     ok( $h2{hp} == 100 );    
+    
     
     my %h3 = (
       'name' => 'arick',
@@ -325,3 +417,9 @@ my @ips = (
 my @ip_result = sort ipsort @ips;
 print "$_\n" for @ip_result;
 print (0 or -1 or 1 or 1);
+print "\n";
+# 列印陣列技巧
+my @arr0 = qw|arick gideon joe cwc|;
+printf "%10s\n" x @arr0, @arr0; # 產生斗量的格式化字串
+
+
