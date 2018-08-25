@@ -33,6 +33,10 @@ subtest 'file read/write', sub {
     my @lines = <FIN>;
     ok(scalar @lines == 3);
     close FIN;
+    
+    my @lines2 = <test.txt>;
+    ok( @lines == 3, '<filename> readall file contents');
+    
 };
 
 subtest 'handle file open warn', sub {
@@ -71,7 +75,20 @@ subtest 'chdir', sub {
 # localtime
 
 sub readfiles() {
-    my @filelist = glob "*.pl";
+    # my @filelist = glob "*.pl";
+    my @filelist = glob "*.pl *.txt";
+    print $#filelist;
+    for (@filelist) {
+      print ">$_<\n";    
+    }
+
+    for (<*.pl>) {
+      print ">$_<\n";    
+    }
+}
+sub readfiles2() {
+    # my @filelist = <*.pl>;
+    my @filelist = <*.pl *.txt>;
     print $#filelist;
     for (@filelist) {
       print ">$_<\n";    
@@ -83,7 +100,8 @@ sub readfiles() {
 }
 
 sub main(){
-
+    readfiles();
+    # readfiles2();
 }
     
 main();
