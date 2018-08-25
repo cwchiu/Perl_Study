@@ -1,3 +1,6 @@
+use strict;
+use warnings;
+
 use Test::More tests => 100;
 
 subtest 'if', sub {
@@ -31,26 +34,40 @@ subtest 'if', sub {
 subtest 'for', sub {
     my $ret = '';
     $ret = $ret . $_ for (1...9);
-    ok( $ret == '123456789' );
+    ok( $ret eq '123456789' );
     
     my $ret2 = '';
     for(my $i=1; $i<=9; $i += 1){
         $ret2 = $ret2 . $i;
     }
-    ok( $ret2 == '123456789');
+    ok( $ret2 eq '123456789');
     
     my $ret3 = '';
     for my $v (1...9) {
         $ret3 = $ret3 . $v;
     }
-    ok( $ret3 == '123456789');
-    
-    $ret3 = '';
-    foreach my $v (1...9) {
-        $ret3 = $ret3 . $v;
-    }
-    ok( $ret3 == '123456789', 'foreach');
-    
+    ok( $ret3 eq '123456789');
+
+    subtest 'foreach', sub {
+        my $ret3 = '';
+        foreach my $v (1..9) {
+            $ret3 = $ret3 . $v;
+        }
+        ok( $ret3 eq '123456789');
+        
+        my $ret4 = '';
+        foreach (1..3){
+            $ret4 .= $_ ;
+        }
+        ok($ret4 eq '123');
+        
+        my $ret5 = '';
+        my @a1 = (1..3);
+        foreach (@a1){
+            $ret5 .= $_;
+        }
+        ok( $ret5 eq '123');
+    };
     
     subtest 'last', sub {
         my $ret4 = 0;
